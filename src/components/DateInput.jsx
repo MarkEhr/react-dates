@@ -4,7 +4,7 @@ import { forbidExtraProps, nonNegativeInteger } from 'airbnb-prop-types';
 import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
 import throttle from 'lodash/throttle';
 import isTouchDevice from 'is-touch-device';
-
+import { polyfill } from 'react-lifecycles-compat';
 import noflip from '../utils/noflip';
 import getInputHeight from '../utils/getInputHeight';
 import openDirectionShape from '../shapes/OpenDirectionShape';
@@ -98,15 +98,6 @@ class DateInput extends React.PureComponent {
 
   componentDidMount() {
     this.setState({ isTouchDevice: isTouchDevice() });
-  }
-
-  componentWillReceiveProps(nextProps) {
-    const { dateString } = this.state;
-    if (dateString && nextProps.displayValue) {
-      this.setState({
-        dateString: '',
-      });
-    }
   }
 
   componentDidUpdate(prevProps) {
@@ -271,6 +262,8 @@ class DateInput extends React.PureComponent {
     );
   }
 }
+
+polyfill(DateInput);
 
 DateInput.propTypes = propTypes;
 DateInput.defaultProps = defaultProps;

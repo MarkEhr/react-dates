@@ -6,6 +6,7 @@ import momentPropTypes from 'react-moment-proptypes';
 import { forbidExtraProps, mutuallyExclusiveProps, nonNegativeInteger } from 'airbnb-prop-types';
 import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
 import moment from 'moment';
+import { polyfill } from 'react-lifecycles-compat';
 
 import { CalendarDayPhrases } from '../defaultPhrases';
 import getPhrasePropTypes from '../utils/getPhrasePropTypes';
@@ -110,26 +111,30 @@ class CalendarMonth extends React.PureComponent {
     this.setMonthTitleHeightTimeout = setTimeout(this.setMonthTitleHeight, 0);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { month, enableOutsideDays, firstDayOfWeek } = nextProps;
+  static getDerivedStateFromProps(props, state) {
+    const { month, enableOutsideDays, firstDayOfWeek } = props;
     const {
       month: prevMonth,
       enableOutsideDays: prevEnableOutsideDays,
       firstDayOfWeek: prevFirstDayOfWeek,
-    } = this.props;
+    } = state;
     if (
       !month.isSame(prevMonth)
       || enableOutsideDays !== prevEnableOutsideDays
       || firstDayOfWeek !== prevFirstDayOfWeek
     ) {
-      this.setState({
+      return {
+        month,
+        enableOutsideDays,
+        firstDayOfWeek,
         weeks: getCalendarMonthWeeks(
           month,
           enableOutsideDays,
           firstDayOfWeek == null ? moment.localeData().firstDayOfWeek() : firstDayOfWeek,
         ),
-      });
+      };
     }
+    return null;
   }
 
   componentWillUnmount() {
@@ -244,6 +249,8 @@ class CalendarMonth extends React.PureComponent {
     );
   }
 }
+
+polyfill(CalendarMonth);
 
 CalendarMonth.propTypes = propTypes;
 CalendarMonth.defaultProps = defaultProps;

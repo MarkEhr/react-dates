@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps, mutuallyExclusiveProps, nonNegativeInteger } from 'airbnb-prop-types';
 import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
+import { polyfill } from 'react-lifecycles-compat';
 
 import moment from 'moment';
 import throttle from 'lodash/throttle';
@@ -281,103 +282,69 @@ class DayPicker extends React.PureComponent {
     this.setCalendarMonthWeeks(currentMonth);
   }
 
-  componentWillReceiveProps(nextProps, nextState) {
+  static getDerivedStateFromProps(props, state) {
     const {
       hidden,
       isFocused,
       showKeyboardShortcuts,
       onBlur,
-      orientation,
       renderMonthText,
       horizontalMonthPadding,
-    } = nextProps;
-    const { currentMonth } = this.state;
-    const { currentMonth: nextCurrentMonth } = nextState;
+    } = props;
+    let newState = { ...state };
 
     if (!hidden) {
-      if (!this.hasSetInitialVisibleMonth) {
-        this.hasSetInitialVisibleMonth = true;
-        this.setState({
-          currentMonth: nextProps.initialVisibleMonth(),
-        });
+      if (!state.hasSetInitialVisibleMonth) {
+        newState.hasSetInitialVisibleMonth = true;
+        newState.currentMonth = props.initialVisibleMonth();
       }
     }
 
-    const {
-      daySize,
-      isFocused: prevIsFocused,
-      renderMonthText: prevRenderMonthText,
-    } = this.props;
+    newState.calendarMonthWidth = getCalendarMonthWidth(props.daySize, horizontalMonthPadding);
 
-    if (nextProps.daySize !== daySize) {
-      this.setState({
-        calendarMonthWidth: getCalendarMonthWidth(
-          nextProps.daySize,
-          horizontalMonthPadding,
-        ),
-      });
-    }
-
-    if (isFocused !== prevIsFocused) {
-      if (isFocused) {
-        const focusedDate = this.getFocusedDay(currentMonth);
-
-        let { onKeyboardShortcutsPanelClose } = this.state;
-        if (nextProps.showKeyboardShortcuts) {
-          // the ? shortcut came from the input and we should return input there once it is close
-          onKeyboardShortcutsPanelClose = onBlur;
-        }
-
-        this.setState({
-          showKeyboardShortcuts,
-          onKeyboardShortcutsPanelClose,
-          focusedDate,
-          withMouseInteractions: false,
-        });
-      } else {
-        this.setState({ focusedDate: null });
+    if (isFocused) {
+      const focusedDate = this.getFocusedDay(state.currentMonth, props);
+      let { onKeyboardShortcutsPanelClose } = state;
+      if (props.showKeyboardShortcuts) {
+        // the ? shortcut came from the input and we should return input there once it is close
+        onKeyboardShortcutsPanelClose = onBlur;
       }
+
+      newState = {
+        ...newState,
+        showKeyboardShortcuts,
+        onKeyboardShortcutsPanelClose,
+        focusedDate,
+        withMouseInteractions: false,
+      };
+    } else {
+      newState.focusedDate = null;
     }
 
-    if (renderMonthText !== prevRenderMonthText) {
-      this.setState({
-        monthTitleHeight: null,
-      });
+    if (renderMonthText) {
+      newState.monthTitleHeight = null;
     }
+    return newState;
+  }
 
+
+  getSnapshotBeforeUpdate(prevProps, prevState) {
     // Capture the scroll position so when previous months are rendered above the current month
     // we can adjust scroll after the component has updated and the previous current month
     // stays in view.
+    const { orientation } = this.props;
+    const { currentMonth } = this.state;
     if (
       orientation === VERTICAL_SCROLLABLE
       && this.transitionContainer
-      && !isSameMonth(currentMonth, nextCurrentMonth)
+      && !isSameMonth(currentMonth, prevState.nextCurrentMonth)
     ) {
-      this.setState({
-        currentMonthScrollTop:
-          this.transitionContainer.scrollHeight - this.transitionContainer.scrollTop,
-      });
+      this.currentMonthScrollTop = this.transitionContainer.scrollHeight
+        - this.transitionContainer.scrollTop;
     }
+    return null;
   }
 
-  componentWillUpdate() {
-    const { transitionDuration } = this.props;
-
-    // Calculating the dimensions trigger a DOM repaint which
-    // breaks the CSS transition.
-    // The setTimeout will wait until the transition ends.
-    if (this.calendarInfo) {
-      this.setCalendarInfoWidthTimeout = setTimeout(() => {
-        const { calendarInfoWidth } = this.state;
-        const calendarInfoPanelWidth = calculateDimension(this.calendarInfo, 'width', true, true);
-        if (calendarInfoWidth !== calendarInfoPanelWidth) {
-          this.setState({
-            calendarInfoWidth: calendarInfoPanelWidth,
-          });
-        }
-      }, transitionDuration);
-    }
-  }
 
   componentDidUpdate(prevProps, prevState) {
     const {
@@ -414,6 +381,22 @@ class DayPicker extends React.PureComponent {
     ) {
       this.transitionContainer.scrollTop = this.transitionContainer.scrollHeight
         - currentMonthScrollTop;
+    }
+    const { transitionDuration } = this.props;
+
+    // Calculating the dimensions trigger a DOM repaint which
+    // breaks the CSS transition.
+    // The setTimeout will wait until the transition ends.
+    if (this.calendarInfo) {
+      this.setCalendarInfoWidthTimeout = setTimeout(() => {
+        const { calendarInfoWidth } = this.state;
+        const calendarInfoPanelWidth = calculateDimension(this.calendarInfo, 'width', true, true);
+        if (calendarInfoWidth !== calendarInfoPanelWidth) {
+          this.setState({
+            calendarInfoWidth: calendarInfoPanelWidth,
+          });
+        }
+      }, transitionDuration);
     }
   }
 
@@ -676,8 +659,8 @@ class DayPicker extends React.PureComponent {
     return firstVisibleMonthIndex;
   }
 
-  getFocusedDay(newMonth) {
-    const { getFirstFocusableDay, numberOfMonths } = this.props;
+  static getFocusedDay(newMonth, props) {
+    const { getFirstFocusableDay, numberOfMonths } = props;
 
     let focusedDate;
     if (getFirstFocusableDay) {
@@ -832,7 +815,7 @@ class DayPicker extends React.PureComponent {
     if (nextFocusedDate) {
       newFocusedDate = nextFocusedDate;
     } else if (!focusedDate && !withMouseInteractions) {
-      newFocusedDate = this.getFocusedDay(newMonth);
+      newFocusedDate = DayPicker.getFocusedDay(newMonth, this.props);
     }
 
     this.setState({
@@ -1253,6 +1236,8 @@ class DayPicker extends React.PureComponent {
     );
   }
 }
+
+polyfill(DayPicker);
 
 DayPicker.propTypes = propTypes;
 DayPicker.defaultProps = defaultProps;

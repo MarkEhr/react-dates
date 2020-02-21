@@ -5,6 +5,7 @@ import { forbidExtraProps, mutuallyExclusiveProps, nonNegativeInteger } from 'ai
 import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
 import moment from 'moment';
 import { addEventListener } from 'consolidated-events';
+import { polyfill } from 'react-lifecycles-compat';
 
 import { CalendarDayPhrases } from '../defaultPhrases';
 import getPhrasePropTypes from '../utils/getPhrasePropTypes';
@@ -121,13 +122,15 @@ class CalendarMonthGrid extends React.PureComponent {
     const withoutTransitionMonths = props.orientation === VERTICAL_SCROLLABLE;
     this.state = {
       months: getMonths(props.initialMonth, props.numberOfMonths, withoutTransitionMonths),
+      initialMonth: props.initialMonth,
+      numberOfMonths: props.numberOfMonths,
+      locale: moment.locale(),
     };
 
     this.isTransitionEndSupported = isTransitionEndSupported();
     this.onTransitionEnd = this.onTransitionEnd.bind(this);
     this.setContainerRef = this.setContainerRef.bind(this);
 
-    this.locale = moment.locale();
     this.onMonthSelect = this.onMonthSelect.bind(this);
     this.onYearSelect = this.onYearSelect.bind(this);
   }
@@ -140,14 +143,14 @@ class CalendarMonthGrid extends React.PureComponent {
     );
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { initialMonth, numberOfMonths, orientation } = nextProps;
-    const { months } = this.state;
-
+  static getDerivedStateFromProps(props, state) {
+    const { initialMonth, numberOfMonths, orientation } = props;
     const {
       initialMonth: prevInitialMonth,
       numberOfMonths: prevNumberOfMonths,
-    } = this.props;
+      months,
+      locale,
+    } = state;
     const hasMonthChanged = !prevInitialMonth.isSame(initialMonth, 'month');
     const hasNumberOfMonthsChanged = prevNumberOfMonths !== numberOfMonths;
     let newMonths = months;
@@ -170,15 +173,18 @@ class CalendarMonthGrid extends React.PureComponent {
       newMonths = getMonths(initialMonth, numberOfMonths, withoutTransitionMonths);
     }
 
+    const newState = {
+      initialMonth,
+      numberOfMonths,
+      months: newMonths,
+    };
     const momentLocale = moment.locale();
-    if (this.locale !== momentLocale) {
-      this.locale = momentLocale;
-      newMonths = newMonths.map((m) => m.locale(this.locale));
+    if (locale !== momentLocale) {
+      newState.locale = momentLocale;
+      newState.months = newMonths.map((m) => m.locale(this.locale));
     }
 
-    this.setState({
-      months: newMonths,
-    });
+    return newState;
   }
 
   componentDidUpdate() {
@@ -363,6 +369,8 @@ class CalendarMonthGrid extends React.PureComponent {
     );
   }
 }
+
+polyfill(CalendarMonthGrid);
 
 CalendarMonthGrid.propTypes = propTypes;
 CalendarMonthGrid.defaultProps = defaultProps;

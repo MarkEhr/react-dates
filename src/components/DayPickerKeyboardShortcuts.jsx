@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
+import { polyfill } from 'react-lifecycles-compat';
 
 import { DayPickerKeyboardShortcutsPhrases } from '../defaultPhrases';
 import getPhrasePropTypes from '../utils/getPhrasePropTypes';
@@ -82,7 +83,7 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
     super(...args);
 
     const { phrases } = this.props;
-    this.keyboardShortcuts = getKeyboardShortcuts(phrases);
+    this.state = { keyboardShortcuts: getKeyboardShortcuts(phrases) };
 
     this.onShowKeyboardShortcutsButtonClick = this.onShowKeyboardShortcutsButtonClick.bind(this);
     this.setShowKeyboardShortcutsButtonRef = this.setShowKeyboardShortcutsButtonRef.bind(this);
@@ -91,11 +92,14 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
     this.onKeyDown = this.onKeyDown.bind(this);
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { phrases } = this.props;
-    if (nextProps.phrases !== phrases) {
-      this.keyboardShortcuts = getKeyboardShortcuts(nextProps.phrases);
+  static getDerivedStateFromProps(props, state) {
+    if (state.phrases !== props.phrases) {
+      return {
+        phrases: props.phrases,
+        keyboardShortcuts: getKeyboardShortcuts(props.phrases),
+      };
     }
+    return null;
   }
 
   componentDidUpdate() {
@@ -171,6 +175,9 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
       renderKeyboardShortcutsButton,
       renderKeyboardShortcutsPanel,
     } = this.props;
+    const {
+      keyboardShortcuts,
+    } = this.state;
 
     const toggleButtonText = showKeyboardShortcutsPanel
       ? phrases.hideKeyboardShortcutsPanel
@@ -214,7 +221,7 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
                 topLeft && styles.DayPickerKeyboardShortcuts_showSpan__topLeft,
               )}
             >
-            ?
+              ?
             </span>
           </button>
         )}
@@ -222,7 +229,7 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
           renderKeyboardShortcutsPanel ? (
             renderKeyboardShortcutsPanel({
               closeButtonAriaLabel: phrases.hideKeyboardShortcutsPanel,
-              keyboardShortcuts: this.keyboardShortcuts,
+              keyboardShortcuts,
               onCloseButtonClick: closeKeyboardShortcutsPanel,
               onKeyDown: this.onKeyDown,
               title: phrases.keyboardShortcuts,
@@ -260,7 +267,7 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
                 {...css(styles.DayPickerKeyboardShortcuts_list)}
                 id="DayPickerKeyboardShortcuts_description"
               >
-                {this.keyboardShortcuts.map(({ unicode, label, action }) => (
+                {keyboardShortcuts.map(({ unicode, label, action }) => (
                   <KeyboardShortcutRow
                     key={label}
                     unicode={unicode}
@@ -277,6 +284,8 @@ class DayPickerKeyboardShortcuts extends React.PureComponent {
     );
   }
 }
+
+polyfill(DayPickerKeyboardShortcuts);
 
 DayPickerKeyboardShortcuts.propTypes = propTypes;
 DayPickerKeyboardShortcuts.defaultProps = defaultProps;
