@@ -33,6 +33,8 @@ var defaultProps = {
   // required props for a functional interactive SingleDatePicker
   date: null,
   focused: false,
+  minDate: null,
+  maxDate: null,
   // input related props
   id: 'date',
   placeholder: 'Date',
@@ -362,6 +364,8 @@ function (_ref) {
         openDirection = _this$props6.openDirection,
         onDateChange = _this$props6.onDateChange,
         date = _this$props6.date,
+        minDate = _this$props6.minDate,
+        maxDate = _this$props6.maxDate,
         onFocusChange = _this$props6.onFocusChange,
         focused = _this$props6.focused,
         enableOutsideDays = _this$props6.enableOutsideDays,
@@ -428,6 +432,8 @@ function (_ref) {
       onClick: onOutsideClick
     }), React.createElement(DayPickerSingleDateController, {
       date: date,
+      minDate: minDate,
+      maxDate: maxDate,
       onDateChange: onDateChange,
       onFocusChange: onFocusChange,
       orientation: orientation,
@@ -511,7 +517,8 @@ function (_ref) {
         reopenPickerOnClearDate = _this$props7.reopenPickerOnClearDate,
         keepOpenOnDateSelect = _this$props7.keepOpenOnDateSelect,
         styles = _this$props7.styles,
-        isOutsideRange = _this$props7.isOutsideRange;
+        isOutsideRange = _this$props7.isOutsideRange,
+        isDayBlocked = _this$props7.isDayBlocked;
     var isInputFocused = this.state.isInputFocused;
     var enableOutsideClick = !withPortal && !withFullScreenPortal;
     var hideFang = verticalSpacing < FANG_HEIGHT_PX;
@@ -530,6 +537,7 @@ function (_ref) {
       showDefaultInputIcon: showDefaultInputIcon,
       inputIconPosition: inputIconPosition,
       isOutsideRange: isOutsideRange,
+      isDayBlocked: isDayBlocked,
       customCloseIcon: customCloseIcon,
       customInputIcon: customInputIcon,
       date: date,

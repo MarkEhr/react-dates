@@ -279,7 +279,7 @@ function (_ref) {
     newState.calendarMonthWidth = getCalendarMonthWidth(props.daySize, horizontalMonthPadding);
 
     if (isFocused) {
-      var focusedDate = this.getFocusedDay(state.currentMonth, props);
+      var focusedDate = DayPicker.getFocusedDay(state.currentMonth, props);
       var onKeyboardShortcutsPanelClose = state.onKeyboardShortcutsPanelClose;
 
       if (props.showKeyboardShortcuts) {

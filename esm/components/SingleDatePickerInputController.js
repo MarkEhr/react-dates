@@ -42,6 +42,7 @@ var propTypes = process.env.NODE_ENV !== "production" ? forbidExtraProps({
   keepOpenOnDateSelect: PropTypes.bool,
   reopenPickerOnClearDate: PropTypes.bool,
   isOutsideRange: PropTypes.func,
+  isDayBlocked: PropTypes.func,
   displayFormat: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
   onClose: PropTypes.func,
   onKeyDownArrowDown: PropTypes.func,
@@ -78,6 +79,9 @@ var defaultProps = {
   reopenPickerOnClearDate: false,
   isOutsideRange: function isOutsideRange(day) {
     return !isInclusivelyAfterDay(day, moment());
+  },
+  isDayBlocked: function isDayBlocked() {
+    return false;
   },
   displayFormat: function displayFormat() {
     return moment.localeData().longDateFormat('L');
@@ -119,12 +123,13 @@ function (_ref) {
   _proto.onChange = function onChange(dateString) {
     var _this$props = this.props,
         isOutsideRange = _this$props.isOutsideRange,
+        isDayBlocked = _this$props.isDayBlocked,
         keepOpenOnDateSelect = _this$props.keepOpenOnDateSelect,
         onDateChange = _this$props.onDateChange,
         onFocusChange = _this$props.onFocusChange,
         onClose = _this$props.onClose;
     var newDate = toMomentObject(dateString, this.getDisplayFormat());
-    var isValid = newDate && !isOutsideRange(newDate);
+    var isValid = newDate && !isOutsideRange(newDate) && !isDayBlocked(newDate);
 
     if (isValid) {
       onDateChange(newDate);

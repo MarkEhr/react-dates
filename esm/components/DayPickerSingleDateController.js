@@ -20,6 +20,7 @@ import { DayPickerPhrases } from '../defaultPhrases';
 import getPhrasePropTypes from '../utils/getPhrasePropTypes';
 import isSameDay from '../utils/isSameDay';
 import isAfterDay from '../utils/isAfterDay';
+import isDayVisible from '../utils/isDayVisible';
 import getVisibleDays from '../utils/getVisibleDays';
 import toISODateString from '../utils/toISODateString';
 import { addModifier, deleteModifier } from '../utils/modifiers';
@@ -32,6 +33,8 @@ import DayPicker from './DayPicker';
 import getPooledMoment from '../utils/getPooledMoment';
 var propTypes = process.env.NODE_ENV !== "production" ? forbidExtraProps({
   date: momentPropTypes.momentObj,
+  minDate: momentPropTypes.momentObj,
+  maxDate: momentPropTypes.momentObj,
   onDateChange: PropTypes.func,
   focused: PropTypes.bool,
   onFocusChange: PropTypes.func,
@@ -89,6 +92,8 @@ var propTypes = process.env.NODE_ENV !== "production" ? forbidExtraProps({
 var defaultProps = {
   date: undefined,
   // TODO: use null
+  minDate: null,
+  maxDate: null,
   onDateChange: function onDateChange() {},
   focused: false,
   onFocusChange: function onFocusChange() {},
@@ -213,6 +218,8 @@ function (_ref) {
       hoverDate: null,
       currentMonth: currentMonth,
       visibleDays: visibleDays,
+      disablePrev: _this.shouldDisableMonthNavigation(props.minDate, currentMonth),
+      disableNext: _this.shouldDisableMonthNavigation(props.maxDate, currentMonth),
       today: moment(),
       // Copy props to state to be able to compare changes inside getDerivedStateFromProps
       isOutsideRange: props.isOutsideRange,
@@ -424,9 +431,11 @@ function (_ref) {
 
   _proto.onPrevMonthClick = function onPrevMonthClick() {
     var _this$props2 = this.props,
-        onPrevMonthClick = _this$props2.onPrevMonthClick,
+        enableOutsideDays = _this$props2.enableOutsideDays,
+        maxDate = _this$props2.maxDate,
+        minDate = _this$props2.minDate,
         numberOfMonths = _this$props2.numberOfMonths,
-        enableOutsideDays = _this$props2.enableOutsideDays;
+        onPrevMonthClick = _this$props2.onPrevMonthClick;
     var _this$state3 = this.state,
         currentMonth = _this$state3.currentMonth,
         visibleDays = _this$state3.visibleDays;
@@ -436,9 +445,12 @@ function (_ref) {
     });
     var prevMonth = currentMonth.clone().subtract(1, 'month');
     var prevMonthVisibleDays = getVisibleDays(prevMonth, 1, enableOutsideDays);
+    var newCurrentMonth = currentMonth.clone().subtract(1, 'month');
     var modifiers = this.state.modifiers;
     this.setState({
       currentMonth: prevMonth,
+      disablePrev: this.shouldDisableMonthNavigation(minDate, newCurrentMonth),
+      disableNext: this.shouldDisableMonthNavigation(maxDate, newCurrentMonth),
       visibleDays: _objectSpread({}, newVisibleDays, {}, DayPickerSingleDateController.getModifiers(prevMonthVisibleDays, modifiers))
     }, function () {
       onPrevMonthClick(prevMonth.clone());
@@ -447,9 +459,11 @@ function (_ref) {
 
   _proto.onNextMonthClick = function onNextMonthClick() {
     var _this$props3 = this.props,
-        onNextMonthClick = _this$props3.onNextMonthClick,
+        enableOutsideDays = _this$props3.enableOutsideDays,
+        maxDate = _this$props3.maxDate,
+        minDate = _this$props3.minDate,
         numberOfMonths = _this$props3.numberOfMonths,
-        enableOutsideDays = _this$props3.enableOutsideDays;
+        onNextMonthClick = _this$props3.onNextMonthClick;
     var _this$state4 = this.state,
         currentMonth = _this$state4.currentMonth,
         visibleDays = _this$state4.visibleDays;
@@ -463,6 +477,8 @@ function (_ref) {
     var modifiers = this.state.modifiers;
     this.setState({
       currentMonth: newCurrentMonth,
+      disablePrev: this.shouldDisableMonthNavigation(minDate, newCurrentMonth),
+      disableNext: this.shouldDisableMonthNavigation(maxDate, newCurrentMonth),
       visibleDays: _objectSpread({}, newVisibleDays, {}, DayPickerSingleDateController.getModifiers(nextMonthVisibleDays, modifiers))
     }, function () {
       onNextMonthClick(newCurrentMonth.clone());
@@ -602,6 +618,14 @@ function (_ref) {
     };
   };
 
+  _proto.shouldDisableMonthNavigation = function shouldDisableMonthNavigation(date, visibleMonth) {
+    if (!date) return false;
+    var _this$props9 = this.props,
+        numberOfMonths = _this$props9.numberOfMonths,
+        enableOutsideDays = _this$props9.enableOutsideDays;
+    return isDayVisible(date, visibleMonth, numberOfMonths, enableOutsideDays);
+  };
+
   _proto.isHovered = function isHovered(day) {
     var _ref2 = this.state || {},
         hoverDate = _ref2.hoverDate;
@@ -630,49 +654,51 @@ function (_ref) {
   };
 
   _proto.render = function render() {
-    var _this$props9 = this.props,
-        numberOfMonths = _this$props9.numberOfMonths,
-        orientation = _this$props9.orientation,
-        monthFormat = _this$props9.monthFormat,
-        renderMonthText = _this$props9.renderMonthText,
-        renderWeekHeaderElement = _this$props9.renderWeekHeaderElement,
-        dayPickerNavigationInlineStyles = _this$props9.dayPickerNavigationInlineStyles,
-        navPosition = _this$props9.navPosition,
-        navPrev = _this$props9.navPrev,
-        navNext = _this$props9.navNext,
-        renderNavPrevButton = _this$props9.renderNavPrevButton,
-        renderNavNextButton = _this$props9.renderNavNextButton,
-        noNavButtons = _this$props9.noNavButtons,
-        noNavPrevButton = _this$props9.noNavPrevButton,
-        noNavNextButton = _this$props9.noNavNextButton,
-        onOutsideClick = _this$props9.onOutsideClick,
-        onShiftTab = _this$props9.onShiftTab,
-        onTab = _this$props9.onTab,
-        withPortal = _this$props9.withPortal,
-        focused = _this$props9.focused,
-        enableOutsideDays = _this$props9.enableOutsideDays,
-        hideKeyboardShortcutsPanel = _this$props9.hideKeyboardShortcutsPanel,
-        daySize = _this$props9.daySize,
-        firstDayOfWeek = _this$props9.firstDayOfWeek,
-        renderCalendarDay = _this$props9.renderCalendarDay,
-        renderDayContents = _this$props9.renderDayContents,
-        renderCalendarInfo = _this$props9.renderCalendarInfo,
-        renderMonthElement = _this$props9.renderMonthElement,
-        calendarInfoPosition = _this$props9.calendarInfoPosition,
-        isFocused = _this$props9.isFocused,
-        isRTL = _this$props9.isRTL,
-        phrases = _this$props9.phrases,
-        dayAriaLabelFormat = _this$props9.dayAriaLabelFormat,
-        onBlur = _this$props9.onBlur,
-        showKeyboardShortcuts = _this$props9.showKeyboardShortcuts,
-        weekDayFormat = _this$props9.weekDayFormat,
-        verticalHeight = _this$props9.verticalHeight,
-        noBorder = _this$props9.noBorder,
-        transitionDuration = _this$props9.transitionDuration,
-        verticalBorderSpacing = _this$props9.verticalBorderSpacing,
-        horizontalMonthPadding = _this$props9.horizontalMonthPadding;
+    var _this$props10 = this.props,
+        numberOfMonths = _this$props10.numberOfMonths,
+        orientation = _this$props10.orientation,
+        monthFormat = _this$props10.monthFormat,
+        renderMonthText = _this$props10.renderMonthText,
+        renderWeekHeaderElement = _this$props10.renderWeekHeaderElement,
+        dayPickerNavigationInlineStyles = _this$props10.dayPickerNavigationInlineStyles,
+        navPosition = _this$props10.navPosition,
+        navPrev = _this$props10.navPrev,
+        navNext = _this$props10.navNext,
+        renderNavPrevButton = _this$props10.renderNavPrevButton,
+        renderNavNextButton = _this$props10.renderNavNextButton,
+        noNavButtons = _this$props10.noNavButtons,
+        noNavPrevButton = _this$props10.noNavPrevButton,
+        noNavNextButton = _this$props10.noNavNextButton,
+        onOutsideClick = _this$props10.onOutsideClick,
+        onShiftTab = _this$props10.onShiftTab,
+        onTab = _this$props10.onTab,
+        withPortal = _this$props10.withPortal,
+        focused = _this$props10.focused,
+        enableOutsideDays = _this$props10.enableOutsideDays,
+        hideKeyboardShortcutsPanel = _this$props10.hideKeyboardShortcutsPanel,
+        daySize = _this$props10.daySize,
+        firstDayOfWeek = _this$props10.firstDayOfWeek,
+        renderCalendarDay = _this$props10.renderCalendarDay,
+        renderDayContents = _this$props10.renderDayContents,
+        renderCalendarInfo = _this$props10.renderCalendarInfo,
+        renderMonthElement = _this$props10.renderMonthElement,
+        calendarInfoPosition = _this$props10.calendarInfoPosition,
+        isFocused = _this$props10.isFocused,
+        isRTL = _this$props10.isRTL,
+        phrases = _this$props10.phrases,
+        dayAriaLabelFormat = _this$props10.dayAriaLabelFormat,
+        onBlur = _this$props10.onBlur,
+        showKeyboardShortcuts = _this$props10.showKeyboardShortcuts,
+        weekDayFormat = _this$props10.weekDayFormat,
+        verticalHeight = _this$props10.verticalHeight,
+        noBorder = _this$props10.noBorder,
+        transitionDuration = _this$props10.transitionDuration,
+        verticalBorderSpacing = _this$props10.verticalBorderSpacing,
+        horizontalMonthPadding = _this$props10.horizontalMonthPadding;
     var _this$state7 = this.state,
         currentMonth = _this$state7.currentMonth,
+        disableNext = _this$state7.disableNext,
+        disablePrev = _this$state7.disablePrev,
         visibleDays = _this$state7.visibleDays;
     return React.createElement(DayPicker, {
       orientation: orientation,
@@ -699,6 +725,8 @@ function (_ref) {
       onOutsideClick: onOutsideClick,
       dayPickerNavigationInlineStyles: dayPickerNavigationInlineStyles,
       navPosition: navPosition,
+      disablePrev: disablePrev,
+      disableNext: disableNext,
       navPrev: navPrev,
       navNext: navNext,
       renderNavPrevButton: renderNavPrevButton,

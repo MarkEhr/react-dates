@@ -303,7 +303,7 @@ class DayPicker extends React.PureComponent {
     newState.calendarMonthWidth = getCalendarMonthWidth(props.daySize, horizontalMonthPadding);
 
     if (isFocused) {
-      const focusedDate = this.getFocusedDay(state.currentMonth, props);
+      const focusedDate = DayPicker.getFocusedDay(state.currentMonth, props);
       let { onKeyboardShortcutsPanelClose } = state;
       if (props.showKeyboardShortcuts) {
         // the ? shortcut came from the input and we should return input there once it is close

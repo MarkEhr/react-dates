@@ -48,6 +48,7 @@ var propTypes = process.env.NODE_ENV !== "production" ? forbidExtraProps({
   withFullScreenPortal: PropTypes.bool,
   minimumNights: nonNegativeInteger,
   isOutsideRange: PropTypes.func,
+  isDayBlocked: PropTypes.func,
   displayFormat: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
   onFocusChange: PropTypes.func,
   onClose: PropTypes.func,
@@ -95,6 +96,9 @@ var defaultProps = {
   minimumNights: 1,
   isOutsideRange: function isOutsideRange(day) {
     return !isInclusivelyAfterDay(day, moment());
+  },
+  isDayBlocked: function isDayBlocked() {
+    return false;
   },
   displayFormat: function displayFormat() {
     return moment.localeData().longDateFormat('L');
@@ -155,11 +159,12 @@ function (_ref) {
     var _this$props2 = this.props,
         startDate = _this$props2.startDate,
         isOutsideRange = _this$props2.isOutsideRange,
+        isDayBlocked = _this$props2.isDayBlocked,
         minimumNights = _this$props2.minimumNights,
         keepOpenOnDateSelect = _this$props2.keepOpenOnDateSelect,
         onDatesChange = _this$props2.onDatesChange;
     var endDate = toMomentObject(endDateString, this.getDisplayFormat());
-    var isEndDateValid = endDate && !isOutsideRange(endDate) && !(startDate && isBeforeDay(endDate, startDate.clone().add(minimumNights, 'days')));
+    var isEndDateValid = endDate && !isOutsideRange(endDate) && !isDayBlocked(endDate) && !(startDate && isBeforeDay(endDate, startDate.clone().add(minimumNights, 'days')));
 
     if (isEndDateValid) {
       onDatesChange({
@@ -196,13 +201,14 @@ function (_ref) {
     var endDate = this.props.endDate;
     var _this$props4 = this.props,
         isOutsideRange = _this$props4.isOutsideRange,
+        isDayBlocked = _this$props4.isDayBlocked,
         minimumNights = _this$props4.minimumNights,
         onDatesChange = _this$props4.onDatesChange,
         onFocusChange = _this$props4.onFocusChange,
         disabled = _this$props4.disabled;
     var startDate = toMomentObject(startDateString, this.getDisplayFormat());
     var isEndDateBeforeStartDate = startDate && isBeforeDay(endDate, startDate.clone().add(minimumNights, 'days'));
-    var isStartDateValid = startDate && !isOutsideRange(startDate) && !(disabled === END_DATE && isEndDateBeforeStartDate);
+    var isStartDateValid = startDate && !isOutsideRange(startDate) && !isDayBlocked(startDate) && !(disabled === END_DATE && isEndDateBeforeStartDate);
 
     if (isStartDateValid) {
       if (isEndDateBeforeStartDate) {
